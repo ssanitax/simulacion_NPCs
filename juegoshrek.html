@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Simulación NPC 16:9</title>
+    <style>
+        body { 
+            margin: 0; 
+            background: #f0f0f0; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: sans-serif;
+        }
+
+        #viewport {
+            width: 90vw;
+            max-height: calc(90vw * 9 / 16);
+            aspect-ratio: 16 / 9;
+            background: white; /* Fondo blanco pedido */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #ccc;
+        }
+
+        .npc {
+            position: absolute;
+            background-image: url('shrek.jpg'); 
+            background-size: cover;
+            background-position: center;
+            border-radius: 50%;
+            background-color: #52b12c; /* Color de respaldo si no hay imagen */
+            will-change: transform; /* Optimización de rendimiento */
+        }
+    </style>
+</head>
+<body>	
+
+    <div id="viewport">
+        <main id="escenario"></main>
+    </div>
+
+    <script>
+        const escenario = document.getElementById("escenario");
+        const viewport = document.getElementById("viewport");
+        const numeroPersonajes = 500;
+        let personajes = [];
+
+        class Npc {
+            constructor(x, y, radio, direccion, velocidad) {
+                this.posx = x;
+                this.posy = y;
+                this.radio = radio;
+                this.direccion = direccion;
+                this.velocidad = velocidad;
+                
+                this.domElement = document.createElement("div");
+                this.domElement.classList.add("npc");
+                this.domElement.style.width = this.radio + "px";
+                this.domElement.style.height = this.radio + "px";
+                escenario.appendChild(this.domElement);
+            }
+
+            mover() {
+                this.direccion += (Math.random() - 0.5) * 0.2;
+
+                // Límites
+                const maxWidth = viewport.clientWidth;
+                const maxHeight = viewport.clientHeight;
+
+                // Rebote en los bordes
+                if (this.posx + this.radio > maxWidth || this.posx < 0 || 
+                    this.posy + this.radio > maxHeight || this.posy < 0) {
+                    this.direccion += Math.PI;
+                    
+                    // Pequeño ajuste para no quedarse pegado al borde
+                    if (this.posx < 0) this.posx = 1;
+                    if (this.posy < 0) this.posy = 1;
+                    if (this.posx + this.radio > maxWidth) this.posx = maxWidth - this.radio - 1;
+                    if (this.posy + this.radio > maxHeight) this.posy = maxHeight - this.radio - 1;
+                }
+
+                this.posx += Math.cos(this.direccion) * this.velocidad;
+                this.posy += Math.sin(this.direccion) * this.velocidad;
+            }
+
+            dibujar() {
+                // Usamos transform para mejor rendimiento que top/left
+                this.domElement.style.transform = `translate(${this.posx}px, ${this.posy}px)`;
+            }
+        }
+
+        function inicializar() {
+            const maxWidth = viewport.clientWidth;
+            const maxHeight = viewport.clientHeight;
+
+            for (let i = 0; i < numeroPersonajes; i++) {
+                let radio = Math.floor(Math.random() * (40 - 20 + 1)) + 20; // Un poco más pequeños para 16:9
+                let x = Math.random() * (maxWidth - radio);
+                let y = Math.random() * (maxHeight - radio);
+                let direccion = Math.random() * Math.PI * 2;
+                let velocidad = Math.random() * 3 + 1;
+
+                personajes.push(new Npc(x, y, radio, direccion, velocidad));
+            }
+        }
+
+        function bucle() {
+            personajes.forEach(p => {
+                p.mover();
+                p.dibujar();
+            });
+            requestAnimationFrame(bucle);
+        }
+
+        // Esperar a que el layout se calcule para tener dimensiones correctas
+        window.onload = () => {
+            inicializar();
+            bucle();
+        };
+
+        // Reajustar si la ventana cambia de tamaño
+        window.onresize = () => {
+        };
+    </script>
+</body>
+</html>
